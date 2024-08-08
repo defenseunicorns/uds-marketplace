@@ -1,0 +1,99 @@
+{
+  "kind": "ZarfPackageConfig",
+  "metadata": {
+    "name": "jenkins",
+    "description": "UDS Jenkins package",
+    "version": "5.4.3-uds.0",
+    "architecture": "amd64",
+    "aggregateChecksum": "e7f3285dac66d1690344454f2e41a0ad1724d7023c791e4ea9cb94005a729758"
+  },
+  "build": {
+    "terminal": "fv-az659-741",
+    "user": "runner",
+    "architecture": "amd64",
+    "timestamp": "Mon, 29 Jul 2024 20:17:21 +0000",
+    "version": "v0.36.0",
+    "migrations": [
+      "scripts-to-actions",
+      "pluralize-set-variable"
+    ],
+    "lastNonBreakingVersion": "v0.27.0",
+    "flavor": "registry1"
+  },
+  "components": [
+    {
+      "name": "uds-jenkins-config",
+      "description": "SSO secret for jenkins",
+      "required": true,
+      "charts": [
+        {
+          "name": "uds-jenkins-config",
+          "version": "0.1.0",
+          "localPath": "chart",
+          "namespace": "jenkins"
+        }
+      ],
+      "actions": {
+        "onDeploy": {
+          "after": [
+            {
+              "wait": {
+                "cluster": {
+                  "kind": "Packages",
+                  "name": "jenkins",
+                  "namespace": "jenkins",
+                  "condition": "'{.status.phase}'=Ready"
+                }
+              }
+            },
+            {
+              "mute": true,
+              "cmd": "./zarf tools kubectl get secret jenkins-sso -n jenkins -o=jsonpath='{.data.sso}' | base64 --decode",
+              "setVariables": [
+                {
+                  "name": "JENKINS_SSO",
+                  "sensitive": true
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "jenkins",
+      "description": "Deploy jenkins with registry1 images",
+      "required": true,
+      "charts": [
+        {
+          "name": "jenkins",
+          "version": "5.4.3",
+          "url": "https://charts.jenkins.io",
+          "repoName": "jenkins",
+          "namespace": "jenkins",
+          "releaseName": "jenkins",
+          "valuesFiles": [
+            "values/common.yaml",
+            "values/registry1.yaml"
+          ]
+        }
+      ],
+      "images": [
+        "registry1.dso.mil/ironbank/opensource/jenkins/jenkins:2.469-jdk17",
+        "registry1.dso.mil/ironbank/opensource/jenkins/inbound-agent:3186.vc3b_7249b_87eb_-1",
+        "registry1.dso.mil/ironbank/kiwigrid/k8s-sidecar:1.27.5"
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "DOMAIN",
+      "default": "uds.dev"
+    },
+    {
+      "name": "JENKINS_SSO",
+      "autoIndent": true,
+      "default": "{}"
+    }
+  ]
+}

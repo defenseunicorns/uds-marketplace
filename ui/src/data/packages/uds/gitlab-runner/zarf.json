@@ -1,0 +1,129 @@
+{
+  "kind": "ZarfPackageConfig",
+  "metadata": {
+    "name": "gitlab-runner",
+    "description": "UDS GitLab Runner Zarf Package",
+    "version": "17.1.0-uds.1",
+    "architecture": "amd64",
+    "aggregateChecksum": "a3efcb6ff5bf1e1337e4ac548fd120e9ec1bc68150f13a4fb2a8354ecabd54ee"
+  },
+  "build": {
+    "terminal": "runner",
+    "user": "runner",
+    "architecture": "amd64",
+    "timestamp": "Wed, 31 Jul 2024 22:07:26 +0000",
+    "version": "v0.36.1",
+    "migrations": [
+      "scripts-to-actions",
+      "pluralize-set-variable"
+    ],
+    "lastNonBreakingVersion": "v0.27.0",
+    "flavor": "registry1"
+  },
+  "components": [
+    {
+      "name": "gitlab-runner",
+      "description": "Deploy gitlab-runner",
+      "required": true,
+      "charts": [
+        {
+          "name": "uds-gitlab-runner-config",
+          "version": "0.1.0",
+          "localPath": "chart",
+          "namespace": "gitlab-runner"
+        },
+        {
+          "name": "gitlab-runner",
+          "version": "0.67.0",
+          "url": "https://charts.gitlab.io",
+          "namespace": "gitlab-runner",
+          "valuesFiles": [
+            "values/common-values.yaml",
+            "values/registry1-values.yaml"
+          ]
+        }
+      ],
+      "images": [
+        "registry1.dso.mil/ironbank/gitlab/gitlab-runner/gitlab-runner:v17.1.0",
+        "registry1.dso.mil/ironbank/gitlab/gitlab-runner/gitlab-runner-helper:v17.1.0",
+        "registry1.dso.mil/ironbank/redhat/ubi/ubi9:9.4"
+      ],
+      "actions": {
+        "onDeploy": {
+          "before": [
+            {
+              "cmd": "./zarf tools kubectl label secret -n gitlab-runner gitlab-gitlab-runner-secret app.kubernetes.io/managed-by=Helm || true"
+            },
+            {
+              "cmd": "./zarf tools kubectl annotate secret -n gitlab-runner gitlab-gitlab-runner-secret meta.helm.sh/release-name=uds-gitlab-runner-config || true"
+            },
+            {
+              "cmd": "./zarf tools kubectl annotate secret -n gitlab-runner gitlab-gitlab-runner-secret meta.helm.sh/release-namespace=gitlab-runner || true"
+            },
+            {
+              "mute": true,
+              "cmd": "test -n \"${ZARF_VAR_RUNNER_AUTH_TOKEN}\" && echo \"${ZARF_VAR_RUNNER_AUTH_TOKEN}\" && exit 0 || true\n\n./zarf tools kubectl wait pod --for=condition=Ready -n gitlab -l \"app=webservice\" > /dev/null\n\nRUNNER_REGISTRATION_TOKEN=$(./zarf tools kubectl get secret -n gitlab gitlab-gitlab-runner-secret -o jsonpath={.data.runner-registration-token} | base64 -d)\nWEBSERVICE_POD=$(./zarf tools kubectl get pod -n gitlab -l \"app=webservice\" -o json | ./zarf tools yq '[.items[] | select(.status.phase = \"Running\") | .metadata.name][0]')\n\n./zarf tools kubectl exec -n gitlab ${WEBSERVICE_POD} -- \\\n  curl -s --request POST \"http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/api/v4/runners\" \\\n  --form \"token=${RUNNER_REGISTRATION_TOKEN}\" --form \"tag_list=uds\" \\\n  | ./zarf tools yq .token\n",
+              "setVariables": [
+                {
+                  "name": "RUNNER_AUTH_TOKEN",
+                  "sensitive": true
+                }
+              ]
+            }
+          ],
+          "after": [
+            {
+              "maxTotalSeconds": 300,
+              "description": "Validate GitLab Runner Package",
+              "wait": {
+                "cluster": {
+                  "kind": "Packages",
+                  "name": "gitlab-runner",
+                  "namespace": "gitlab-runner",
+                  "condition": "'{.status.phase}'=Ready"
+                }
+              }
+            },
+            {
+              "maxTotalSeconds": 300,
+              "description": "Validate GitLab Runner Sandbox Package",
+              "wait": {
+                "cluster": {
+                  "kind": "Packages",
+                  "name": "gitlab-runner-sandbox",
+                  "namespace": "${ZARF_VAR_RUNNER_SANDBOX_NAMESPACE}",
+                  "condition": "'{.status.phase}'=Ready"
+                }
+              }
+            },
+            {
+              "description": "Gitlab Runner to be Healthy",
+              "wait": {
+                "cluster": {
+                  "kind": "Deployment",
+                  "name": "gitlab-runner",
+                  "namespace": "gitlab-runner",
+                  "condition": "Available"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variables": [
+    {
+      "name": "DOMAIN",
+      "default": "uds.dev"
+    },
+    {
+      "name": "RUNNER_AUTH_TOKEN",
+      "description": "The Runner Authentication Token to use when registering the GitLab Runner (if none is provided will register a default instance runner)"
+    },
+    {
+      "name": "RUNNER_SANDBOX_NAMESPACE",
+      "default": "gitlab-runner-sandbox"
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "kind": "ZarfPackageConfig",
+  "metadata": {
+    "name": "mattermost",
+    "description": "UDS Mattermost Package",
+    "version": "9.10.1-uds.1",
+    "architecture": "amd64",
+    "aggregateChecksum": "1fcc2dfe386540af8ed7f76ded9307618df7308e41f736d41800299513248940"
+  },
+  "build": {
+    "terminal": "runner",
+    "user": "runner",
+    "architecture": "amd64",
+    "timestamp": "Wed, 07 Aug 2024 21:01:48 +0000",
+    "version": "v0.36.1",
+    "migrations": [
+      "scripts-to-actions",
+      "pluralize-set-variable"
+    ],
+    "lastNonBreakingVersion": "v0.27.0",
+    "flavor": "registry1"
+  },
+  "components": [
+    {
+      "name": "mattermost",
+      "description": "Deploy Mattermost",
+      "required": true,
+      "charts": [
+        {
+          "name": "uds-mattermost-config",
+          "version": "0.1.0",
+          "localPath": "chart",
+          "namespace": "mattermost",
+          "valuesFiles": [
+            "values/config-values.yaml"
+          ]
+        },
+        {
+          "name": "mattermost-enterprise-edition",
+          "version": "2.6.58",
+          "url": "https://helm.mattermost.com",
+          "gitPath": "chart",
+          "namespace": "mattermost",
+          "valuesFiles": [
+            "values/common-values.yaml",
+            "values/registry1-values.yaml"
+          ]
+        }
+      ],
+      "images": [
+        "registry1.dso.mil/ironbank/redhat/ubi/ubi9-minimal:9.4",
+        "registry1.dso.mil/ironbank/opensource/mattermost/mattermost:9.10.1"
+      ],
+      "actions": {
+        "onDeploy": {
+          "after": [
+            {
+              "maxTotalSeconds": 300,
+              "description": "Validate Mattermost Package",
+              "wait": {
+                "cluster": {
+                  "kind": "Packages",
+                  "name": "mattermost",
+                  "namespace": "mattermost",
+                  "condition": "'{.status.phase}'=Ready"
+                }
+              }
+            },
+            {
+              "description": "Mattermost to be Healthy",
+              "wait": {
+                "cluster": {
+                  "kind": "Deployment",
+                  "name": "mattermost-enterprise-edition",
+                  "namespace": "mattermost",
+                  "condition": "Available"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variables": [
+    {
+      "name": "SUBDOMAIN",
+      "description": "Subdomain for Mattermost",
+      "default": "chat"
+    },
+    {
+      "name": "DOMAIN",
+      "default": "uds.dev"
+    },
+    {
+      "name": "ACCESS_KEY",
+      "description": "Access Key for S3 compatible storage"
+    },
+    {
+      "name": "SECRET_KEY",
+      "description": "Secret Key for S3 compatible storage"
+    },
+    {
+      "name": "DB_PASSWORD",
+      "description": "Database Password for Mattermost"
+    },
+    {
+      "name": "MM_LICENSE",
+      "description": "License for Mattermost"
+    }
+  ]
+}
