@@ -1,0 +1,110 @@
+{
+  "kind": "ZarfPackageConfig",
+  "metadata": {
+    "name": "sonarqube",
+    "description": "UDS Sonarqube package",
+    "version": "10.6.0-uds.1",
+    "architecture": "amd64",
+    "aggregateChecksum": "c20f9493c26ac7fc264f7ad0a8dec0115f02a616f737c21a0ac2731be9b2c6e4"
+  },
+  "build": {
+    "terminal": "runner",
+    "user": "runner",
+    "architecture": "amd64",
+    "timestamp": "Tue, 06 Aug 2024 22:55:19 +0000",
+    "version": "v0.36.1",
+    "migrations": [
+      "scripts-to-actions",
+      "pluralize-set-variable"
+    ],
+    "lastNonBreakingVersion": "v0.27.0",
+    "flavor": "upstream"
+  },
+  "components": [
+    {
+      "name": "sonarqube",
+      "description": "Deploy sonarqube",
+      "required": true,
+      "charts": [
+        {
+          "name": "uds-sonarqube-config",
+          "version": "0.1.0",
+          "localPath": "chart",
+          "namespace": "sonarqube"
+        },
+        {
+          "name": "sonarqube",
+          "version": "10.6.1",
+          "url": "https://SonarSource.github.io/helm-chart-sonarqube",
+          "namespace": "sonarqube",
+          "valuesFiles": [
+            "values/common-values.yaml",
+            "values/upstream-values.yaml"
+          ]
+        }
+      ],
+      "images": [
+        "uds-package-sonarqube/monitoring:latest",
+        "sonarqube:10.6.0-community",
+        "curlimages/curl:8.8.0",
+        "busybox:1.36"
+      ],
+      "actions": {
+        "onCreate": {
+          "before": [
+            {
+              "dir": "common",
+              "cmd": "docker buildx build --load ../src/monitoring-image -t uds-package-sonarqube/monitoring:latest --platform linux/amd64\n"
+            }
+          ]
+        },
+        "onDeploy": {
+          "after": [
+            {
+              "maxTotalSeconds": 300,
+              "description": "Validate SonarQube Package",
+              "wait": {
+                "cluster": {
+                  "kind": "Packages",
+                  "name": "sonarqube",
+                  "namespace": "sonarqube",
+                  "condition": "'{.status.phase}'=Ready"
+                }
+              }
+            },
+            {
+              "cmd": "STATUS=$(curl -XPOST -s \"https://sonarqube.$ZARF_VAR_DOMAIN/api/system/migrate_db\" | ./zarf tools yq '.state')\necho \"SonarQube migration state: ${STATUS}\"\n",
+              "description": "Perform DB migrations if necessary"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variables": [
+    {
+      "name": "SONARQUBE_DEPENDS_ON",
+      "default": "[]"
+    },
+    {
+      "name": "SONARQUBE_CREATE_NAMESPACE",
+      "default": "false"
+    },
+    {
+      "name": "DOMAIN",
+      "default": "uds.dev"
+    },
+    {
+      "name": "SONARQUBE_DB_NAME",
+      "default": "sonarqubedb"
+    },
+    {
+      "name": "SONARQUBE_DB_USERNAME",
+      "default": "sonarqube"
+    },
+    {
+      "name": "SONARQUBE_DB_ENDPOINT",
+      "default": "postgres"
+    }
+  ]
+}

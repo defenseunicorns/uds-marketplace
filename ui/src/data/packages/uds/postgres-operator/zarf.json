@@ -1,0 +1,113 @@
+{
+  "kind": "ZarfPackageConfig",
+  "metadata": {
+    "name": "postgres-operator",
+    "description": "A deployment of zalando postgres operator",
+    "version": "1.12.2-uds.2",
+    "url": "https://github.com/zalando/postgres-operator",
+    "architecture": "amd64",
+    "aggregateChecksum": "c64d8795c6c745ccbd0830f77b129f6c707c44ac39d227cdbd2fea428fad4e22"
+  },
+  "build": {
+    "terminal": "fv-az1247-912",
+    "user": "runner",
+    "architecture": "amd64",
+    "timestamp": "Wed, 31 Jul 2024 21:33:55 +0000",
+    "version": "v0.36.1",
+    "migrations": [
+      "scripts-to-actions",
+      "pluralize-set-variable"
+    ],
+    "lastNonBreakingVersion": "v0.27.0",
+    "flavor": "upstream"
+  },
+  "components": [
+    {
+      "name": "crds",
+      "required": true,
+      "manifests": [
+        {
+          "name": "crds",
+          "files": [
+            "https://github.com/zalando/postgres-operator/raw/v1.12.2/charts/postgres-operator/crds/operatorconfigurations.yaml",
+            "https://github.com/zalando/postgres-operator/raw/v1.12.2/charts/postgres-operator/crds/postgresqls.yaml",
+            "https://github.com/zalando/postgres-operator/raw/v1.12.2/charts/postgres-operator/crds/postgresteams.yaml"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "postgres-operator",
+      "required": true,
+      "charts": [
+        {
+          "name": "uds-postgres-config",
+          "version": "0.1.0",
+          "localPath": "chart",
+          "namespace": "postgres-operator",
+          "valuesFiles": [
+            "values/upstream-config-values.yaml"
+          ]
+        },
+        {
+          "name": "postgres-operator",
+          "version": "1.12.2",
+          "url": "https://opensource.zalando.com/postgres-operator/charts/postgres-operator",
+          "namespace": "postgres-operator",
+          "valuesFiles": [
+            "values/values.yaml",
+            "values/upstream-values.yaml"
+          ]
+        }
+      ],
+      "images": [
+        "ghcr.io/zalando/postgres-operator:v1.12.2",
+        "ghcr.io/zalando/postgres-operator/logical-backup:v1.12.2",
+        "docker.io/bitnami/pgbouncer:1.23.0",
+        "ghcr.io/zalando/spilo-15:3.2-p1",
+        "quay.io/prometheuscommunity/postgres-exporter:v0.15.0"
+      ],
+      "actions": {
+        "onDeploy": {
+          "before": [
+            {
+              "cmd": "./zarf tools kubectl annotate --overwrite postgresql -n postgres pg-cluster meta.helm.sh/release-namespace=postgres-operator || true"
+            },
+            {
+              "cmd": "./zarf tools kubectl annotate --overwrite service -n postgres pg-cluster-headless meta.helm.sh/release-namespace=postgres-operator || true"
+            },
+            {
+              "cmd": "./zarf tools kubectl annotate --overwrite package -n postgres postgres meta.helm.sh/release-namespace=postgres-operator || true"
+            }
+          ],
+          "after": [
+            {
+              "maxTotalSeconds": 300,
+              "description": "Validate Postgres Operator Package",
+              "wait": {
+                "cluster": {
+                  "kind": "Packages",
+                  "name": "postgres",
+                  "namespace": "postgres",
+                  "condition": "'{.status.phase}'=Ready"
+                }
+              }
+            },
+            {
+              "maxTotalSeconds": 90,
+              "description": "Postgres Operator to be Healthy",
+              "wait": {
+                "cluster": {
+                  "kind": "pod",
+                  "name": "app.kubernetes.io/name=postgres-operator",
+                  "namespace": "postgres-operator",
+                  "condition": "Ready"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

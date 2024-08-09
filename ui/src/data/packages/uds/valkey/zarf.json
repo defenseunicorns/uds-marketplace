@@ -1,0 +1,82 @@
+{
+  "kind": "ZarfPackageConfig",
+  "metadata": {
+    "name": "valkey",
+    "description": "A deployment of Valkey (a Redis alternative by the Linux Foundation)",
+    "version": "7.2.6-uds.0",
+    "url": "https://github.com/valkey-io/valkey",
+    "architecture": "amd64",
+    "aggregateChecksum": "723bbbeeeb3744516f64172c99dc24ee6bb4498f1b407f061a4e2507d3e635d5"
+  },
+  "build": {
+    "terminal": "fv-az1016-1",
+    "user": "runner",
+    "architecture": "amd64",
+    "timestamp": "Wed, 31 Jul 2024 21:33:20 +0000",
+    "version": "v0.36.1",
+    "migrations": [
+      "scripts-to-actions",
+      "pluralize-set-variable"
+    ],
+    "lastNonBreakingVersion": "v0.27.0",
+    "flavor": "upstream"
+  },
+  "components": [
+    {
+      "name": "valkey",
+      "required": true,
+      "charts": [
+        {
+          "name": "uds-valkey-config",
+          "version": "0.1.0",
+          "localPath": "chart",
+          "namespace": "valkey"
+        },
+        {
+          "name": "valkey",
+          "version": "0.3.13",
+          "url": "oci://registry-1.docker.io/bitnamicharts/valkey",
+          "namespace": "valkey",
+          "valuesFiles": [
+            "values/values.yaml",
+            "values/upstream-values.yaml"
+          ]
+        }
+      ],
+      "images": [
+        "docker.io/bitnami/valkey:7.2.6-debian-12-r0",
+        "docker.io/bitnami/redis-exporter:1.62.0-debian-12-r2"
+      ],
+      "actions": {
+        "onDeploy": {
+          "after": [
+            {
+              "maxTotalSeconds": 300,
+              "description": "Validate Valkey Package",
+              "wait": {
+                "cluster": {
+                  "kind": "Packages",
+                  "name": "valkey",
+                  "namespace": "valkey",
+                  "condition": "'{.status.phase}'=Ready"
+                }
+              }
+            },
+            {
+              "maxTotalSeconds": 90,
+              "description": "Valkey to be Healthy",
+              "wait": {
+                "cluster": {
+                  "kind": "pod",
+                  "name": "app.kubernetes.io/name=valkey",
+                  "namespace": "valkey",
+                  "condition": "Ready"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
