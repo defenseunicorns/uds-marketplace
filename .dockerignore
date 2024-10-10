@@ -1,23 +1,10 @@
 
 # Output
-.output
-.vercel
 /ui/.svelte-kit
 /ui/build
-/build
-.github/uds-core/
 /ui/static/api
 /ui/node_modules
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Env
-.env
-.env.*
-!.env.example
-!.env.test
+/build
 
 # Vite
 vite.config.js.timestamp-*
@@ -30,11 +17,3 @@ vite.config.ts.timestamp-*
 zarf-sbom
 tmp/
 *.tar.zst
-.tool-versions
-venv
-.vscode
-.venv
-
-# IntelliJ
-**/.idea
-uds-appstore.iml

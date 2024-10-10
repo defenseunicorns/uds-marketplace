@@ -12,9 +12,6 @@ mkdir -p "$packages_dir"
 # Uncomment the following line if you want to clear the packages directory each run
 # rm -rf "$packages_dir/*"
 
-yq="uds zarf tools yq"
-echo "yq command: $yq"
-
 # Arrays to store successful and failed packages
 successful_packages=()
 failed_packages=()
@@ -57,7 +54,7 @@ for file in $files; do
   echo "Latest version: $REPO:$latest"
 
   echo "Fetching architectures..."
-  export ARCHS=$(oras manifest fetch "$REPO:$latest" | $yq '.manifests[].platform.architecture' || echo "")
+  export ARCHS=$(oras manifest fetch "$REPO:$latest" | yq '.manifests[].platform.architecture' || echo "")
   if [ -z "$ARCHS" ]; then
     echo "Warning: No architectures found for $REPO:$latest"
     package_success=false
@@ -67,7 +64,7 @@ for file in $files; do
   echo "Architectures: $ARCHS"
 
   echo "Generating JSON for $PACKAGE..."
-  $yq '
+  yq '
     .spec.versions = (env(VERSIONS) | split(" ") | reverse) |
     .spec.architecture = (env(ARCHS) | split(" ") | sort) |
     .spec.repository = .spec.repository // env(REPO) |
@@ -86,7 +83,7 @@ for file in $files; do
   manifest=$(oras manifest fetch --platform=multi/amd64 "$REPO:$latest")
 
   echo "Extracting digest..."
-  digest=$(echo "$manifest" | $yq '.layers[] | select(.annotations["org.opencontainers.image.title"] == "zarf.yaml") | .digest')
+  digest=$(echo "$manifest" | yq '.layers[] | select(.annotations["org.opencontainers.image.title"] == "zarf.yaml") | .digest')
   if [ -z "$digest" ]; then
     echo "Warning: No digest found for zarf.yaml in $REPO:$latest"
     package_success=false
@@ -95,7 +92,7 @@ for file in $files; do
   fi
 
   echo "Fetching blob and generating JSON..."
-  oras blob fetch --output - "$REPO@$digest" | $yq -o=json >"$packages_dir/$PACKAGE.json"
+  oras blob fetch --output - "$REPO@$digest" | yq -o=json >"$packages_dir/$PACKAGE.json"
 
   if [ ! -f "$packages_dir/$PACKAGE.json" ]; then
     echo "Error: Failed to create $packages_dir/$PACKAGE.json"
@@ -111,7 +108,7 @@ for file in $files; do
 done
 
 echo "Generating index.json..."
-$yq eval-all -o=json '. as $item ireduce ([]; . + $item)' "$apps_dir"/*.json >"$apps_dir/index.json"
+yq eval-all -o=json '. as $item ireduce ([]; . + $item)' "$apps_dir"/*.json >"$apps_dir/index.json"
 
 echo "Script completed."
 
