@@ -23,7 +23,7 @@ describe('applicationsStore', () => {
       description: 'This is app 2',
       vendor: { name: 'Vendor 2', url: 'https://vendor2.com' },
       categories: [Category.Arcade],
-      infrastructure: [Infrastructure.AWSGov],
+      infrastructure: [Infrastructure.AWSGovCloudUS],
       architecture: [Architecture.Arm64]
     }
   } as Application;

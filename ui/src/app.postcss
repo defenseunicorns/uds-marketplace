@@ -2,27 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --navbar-height: 80px;
+  --sidebar-width: 16rem;
+
+  /* Disable scrollbar by default */
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@layer base {
+  * {
+    @apply antialiased;
+  }
+}
+
+@layer utilities {
+  .scrollbar-visible::-webkit-scrollbar {
+    display: block;
+  }
+  .scrollbar-visible {
+    -ms-overflow-style: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 transparent;
+  }
+
+  .custom-scroll {
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.2s ease-in-out;
+    -webkit-scrollbar-width: thin;
+  }
+  .custom-scroll.scroll-active {
+    scrollbar-color: #4b5563 transparent;
+    transition: scrollbar-color 0.2s ease-in-out;
+  }
+
+  .link {
+    @apply font-normal text-gray-400 transition-colors duration-300 ease-in-out hover:text-white;
+  }
+}
+
 @layer components {
-  /* width */
-  ::-webkit-scrollbar {
-    width: 10px;
-  }
-
-  /* Track */
-  ::-webkit-scrollbar-track {
-    background: rgb(55, 65, 81);
-  }
-
-  /* Handle */
-  ::-webkit-scrollbar-thumb {
-    background: rgba(156, 163, 175, 0.5);
-  }
-
-  /* Handle on hover */
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(156, 163, 175, 0.75);
-  }
-
   select {
     @apply block w-full appearance-none border-0 border-b-2 border-gray-200 bg-transparent px-0 py-2.5 text-sm text-gray-500 focus:border-gray-200 focus:outline-none focus:ring-0 dark:border-gray-700 dark:text-gray-400;
   }

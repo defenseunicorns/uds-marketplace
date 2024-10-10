@@ -24,12 +24,12 @@ type ApplicationSpec struct {
 	Description        string                        `json:"description" yaml:"description" xml:"description"`
 	Repository         string                        `json:"repository" yaml:"repository" xml:"repository"`
 	Icons              []ApplicationIcon             `json:"icons" yaml:"icons" xml:"icons"`
-	Categories         []ApplicationCategory         `json:"categories" yaml:"categories" xml:"categories" jsonschema:"enum=AI/ML,enum=Arcade,enum=Business,enum=Databases,enum=Development Tools,enum=Kubernetes,enum=Networking,enum=Productivity,enum=Security,enum=Web"`
+	Categories         []ApplicationCategory         `json:"categories" yaml:"categories" xml:"categories" jsonschema:"enum=AI/ML,enum=Arcade,enum=Collaboration,enum=Command And Control,enum=Databases,enum=Digital Engineering,enum=IT Management,enum=Kubernetes (K8s),enum=Networking,enum=Productivity,enum=Security,enum=Software Dev,enum=Space Operations,enum=Web"`
 	Vendor             ApplicationVendor             `json:"vendor" yaml:"vendor" xml:"vendor"`
 	ContractingDetails ApplicationContractingDetails `json:"contractingDetails" yaml:"contractingDetails" xml:"contractingDetails"`
-	Security           ApplicationSecurity           `json:"security" yaml:"security" xml:"security"`
+	Security           ApplicationSecurity           `json:"security" yaml:"security" xml:"security" jsonschema:"enum=NIST 800-53 Controls Mapped,enum=FIPS Image"`
 	Architecture       []ApplicationArchitecture     `json:"architecture" yaml:"architecture" xml:"architecture" jsonschema:"enum=arm64,enum=amd64"`
-	Infrastructure     []ApplicationInfrastructure   `json:"infrastructure" yaml:"infrastructure" xml:"infrastructure" jsonschema:"enum=AWS Gov,enum=Azure Gov,enum=On-Prem,enum=AirGapped"`
+	Infrastructure     []ApplicationInfrastructure   `json:"infrastructure" yaml:"infrastructure" xml:"infrastructure" jsonschema:"enum=AWS GovCloud (US),enum=Azure Government Cloud,enum=On-prem,enum=Edge"`
 	Keywords           []string                      `json:"keywords" yaml:"keywords" xml:"keywords"`
 	Links              []ApplicationResourceLink     `json:"links" yaml:"links" xml:"links"`
 	Versions           []string                      `json:"versions" yaml:"versions" xml:"versions"`
@@ -48,14 +48,6 @@ type ApplicationContractingDetails struct {
 	SmallBusinessStatus string               `json:"smallBusinessStatus" yaml:"smallBusinessStatus" xml:"smallBusinessStatus"`
 }
 
-type ApplicationSecurity struct {
-	Nist80053   bool          `json:"nist80053" yaml:"nist80053" xml:"nist80053"`
-	Fips        bool          `json:"fips" yaml:"fips" xml:"fips"`
-	CveReport   bool          `json:"cveReport" yaml:"cveReport" xml:"cveReport"`
-	Sbom        bool          `json:"sbom" yaml:"sbom" xml:"sbom"`
-	ImpactLevel []ImpactLevel `json:"impactLevel" yaml:"impactLevel" xml:"impactLevel" jsonschema:"enum=2,enum=4,enum=5,enum=6"`
-}
-
 type ApplicationIcon struct {
 	Src  string `json:"src" yaml:"src" xml:"src"`
 	Type string `json:"type" yaml:"type" xml:"type"`
@@ -72,6 +64,7 @@ type (
 	ApplicationPricing        string
 	ImpactLevel               string
 	ApplicationArchitecture   string
+	ApplicationSecurity       string
 	ApplicationInfrastructure string
 	ApplicationCategory       string
 )
@@ -89,19 +82,25 @@ const (
 	ApplicationArchitectureArm64 ApplicationArchitecture = "arm64"
 	ApplicationArchitectureAmd64 ApplicationArchitecture = "amd64"
 
-	ApplicationInfrastructureAwsGov    ApplicationInfrastructure = "AWS Gov"
-	ApplicationInfrastructureAzureGov  ApplicationInfrastructure = "Azure Gov"
-	ApplicationInfrastructureOnPrem    ApplicationInfrastructure = "On-Prem"
-	ApplicationInfrastructureAirGapped ApplicationInfrastructure = "AirGapped"
+	ApplicationInfrastructureAwsGov   ApplicationInfrastructure = "AWS GovCloud (US)"
+	ApplicationInfrastructureAzureGov ApplicationInfrastructure = "Azure Government Cloud"
+	ApplicationInfrastructureOnPrem   ApplicationInfrastructure = "On-prem"
+	ApplicationInfrastructureEdge     ApplicationInfrastructure = "Edge"
 
-	ApplicationCategoryAiMl         ApplicationCategory = "AI/ML"
-	ApplicationCategoryArcade       ApplicationCategory = "Arcade"
-	ApplicationCategoryBusiness     ApplicationCategory = "Business"
-	ApplicationCategoryDatabases    ApplicationCategory = "Databases"
-	ApplicationCategoryDevTools     ApplicationCategory = "Development Tools"
-	ApplicationCategoryKubernetes   ApplicationCategory = "Kubernetes"
-	ApplicationCategoryNetworking   ApplicationCategory = "Networking"
-	ApplicationCategoryProductivity ApplicationCategory = "Productivity"
-	ApplicationCategorySecurity     ApplicationCategory = "Security"
-	ApplicationCategoryWeb          ApplicationCategory = "Web"
+	ApplicationSecurityNist80053          ApplicationCategory = "NIST 800-53 Controls Mapped"
+	ApplicationSecurityFips               ApplicationCategory = "FIPS Image"
+	ApplicationCategoryAiMl               ApplicationCategory = "AI/ML"
+	ApplicationCategoryArcade             ApplicationCategory = "Arcade"
+	ApplicationCategoryCollaboration      ApplicationCategory = "Collaboration"
+	ApplicationCategoryCommandAndControl  ApplicationCategory = "Command and Control"
+	ApplicationCategoryDatabases          ApplicationCategory = "Databases"
+	ApplicationCategoryDigitalEngineering ApplicationCategory = "DigitalEngineering"
+	ApplicationCategoryITManagement       ApplicationCategory = "IT Management"
+	ApplicationCategoryKubernetes         ApplicationCategory = "Kubernetes (K8s)"
+	ApplicationCategoryNetworking         ApplicationCategory = "Networking"
+	ApplicationCategoryProductivity       ApplicationCategory = "Productivity"
+	ApplicationCategorySecurity           ApplicationCategory = "Security"
+	ApplicationCategorySoftwareDev        ApplicationCategory = "Software Dev"
+	ApplicationCategorySpaceOperations    ApplicationCategory = "Space Operations"
+	ApplicationCategoryWeb                ApplicationCategory = "Web"
 )

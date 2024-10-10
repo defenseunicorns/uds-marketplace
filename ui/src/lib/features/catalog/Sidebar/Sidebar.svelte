@@ -3,25 +3,19 @@
 <script lang="ts">
   import { writable } from 'svelte/store';
   import { page } from '$app/stores';
-  import { onMount, afterUpdate } from 'svelte';
+  import { onMount } from 'svelte';
   import tailwindConfig from '$lib/tailwind-config';
-  import { Category, PricingModel, Infrastructure, Architecture, ImpactLevel } from '$lib/types';
+  import { Category, Security, Infrastructure } from '$lib/types';
   import { ChevronDown } from 'carbon-icons-svelte';
-  import { type Filter, applicationStore } from '$lib/stores';
+  import { applicationStore, type Filter } from '$lib/stores';
   import type {
     CatalogStore,
     SelectedFilters
   } from '$lib/stores/applicationstore/applicationstore';
+  import { SearchInput } from '$lib/components';
 
   export const isOpen = writable(true);
   export let routes: string[] = [];
-
-  let innerWidth: number;
-  let sidebarElement: HTMLElement;
-  let selectedFilters: SelectedFilters;
-  let collapsedFilters: { [key: string]: boolean } = {};
-
-  const mdBreakpoint = parseInt(tailwindConfig.theme.screens.md);
 
   const sidebarFilters: Filter[] = [
     {
@@ -30,26 +24,35 @@
       field: 'spec.categories'
     },
     {
-      label: 'Pricing Model',
-      values: Object.values(PricingModel) as string[],
-      field: 'spec.contractingDetails.pricingModel'
-    },
-    {
-      label: 'Impact Level',
-      values: Object.values(ImpactLevel) as string[],
-      field: 'spec.security.impactLevel'
-    },
-    {
-      label: 'Infrastructure',
-      values: Object.values(Infrastructure) as string[],
+      label: 'Supported Infrastructure',
+      values: (() => {
+        // Types are auto-generated in alphabetical order, but we want to manually order "Edge" to the end
+        const infraValues = Object.values(Infrastructure) as string[];
+        const edgeIndex = infraValues.indexOf(Infrastructure.Edge);
+        if (edgeIndex !== -1) {
+          // Remove "on-prem" from its current position
+          const [onPrem] = infraValues.splice(edgeIndex, 1);
+          // Add "on-prem" to the end of the array
+          infraValues.push(onPrem);
+        }
+
+        return infraValues;
+      })(),
       field: 'spec.infrastructure'
     },
     {
-      label: 'Architecture',
-      values: Object.values(Architecture) as string[],
-      field: 'spec.architecture'
+      label: 'Security',
+      values: Object.values(Security) as string[],
+      field: 'spec.security'
     }
   ];
+
+  let innerWidth: number;
+  let selectedFilters: SelectedFilters;
+  let openedFilters: { [key: string]: boolean } = { [sidebarFilters[0].label]: true };
+  let scrolling = false;
+
+  const mdBreakpoint = parseInt(tailwindConfig.theme.screens.md);
 
   // Subscribe to the application store
   const unsubscribeCatalog = applicationStore.subscribe((store) => {
@@ -59,7 +62,7 @@
   // Toggle the collapsed state of a filter
 
   function toggleFilter(filter: string) {
-    collapsedFilters[filter] = !collapsedFilters[filter];
+    openedFilters[filter] = !openedFilters[filter];
   }
 
   // Handle filter change
@@ -90,36 +93,19 @@
     applicationStore.filterApplications();
   }
 
-  // Update the sidebar --sidebar-width css variable
-  function updateSidebarWidth() {
-    if (sidebarElement && isValidRoute) {
-      const sidebarWidth = sidebarElement.offsetWidth;
-      document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
-    } else {
-      document.documentElement.style.setProperty('--sidebar-width', '0px');
-    }
-  }
-
-  // Update the sidebar width and visibility on window resize
+  // Update the sidebar visibility on window resize
   function handleResize() {
     isOpen.set(!isSmallScreen);
-    updateSidebarWidth();
   }
 
   onMount(() => {
     handleResize();
-    updateSidebarWidth();
     window.addEventListener('resize', handleResize);
     return () => {
       clearFilters();
       unsubscribeCatalog();
       window.removeEventListener('resize', handleResize);
     };
-  });
-
-  // Update the sidebar width and visibility on navigation change
-  afterUpdate(() => {
-    updateSidebarWidth();
   });
 
   $: isSmallScreen = innerWidth < mdBreakpoint;
@@ -129,39 +115,58 @@
       clearFilters();
     }
   }
+
+  function handleSearch(searchQuery: string) {
+    applicationStore.setSearchQuery(searchQuery);
+    applicationStore.filterApplications();
+  }
 </script>
 
 <svelte:window bind:innerWidth on:resize={handleResize} />
 
 {#if isValidRoute}
   <div
-    bind:this={sidebarElement}
     id="filter-sidebar"
-    class="flex h-[calc(100vh-var(--nav-height))] min-w-64 flex-col items-start justify-start gap-3 overflow-y-hidden border-r border-gray-700 bg-gray-800 transition-transform duration-300 ease-in-out"
+    class="custom-scroll flex max-h-[calc(100vh-var(--navbar-height))] w-[var(--sidebar-width)] min-w-[var(--sidebar-width)] flex-col items-start justify-start gap-3 overflow-y-auto border-r border-gray-700 bg-gray-800"
     class:translate-x-0={$isOpen}
     class:-translate-x-full={!$isOpen}
     class:hidden={isSmallScreen}
     class:md:block={!isSmallScreen}
+    class:scroll-active={scrolling}
+    on:scroll={() => (scrolling = true)}
+    on:scrollend={() => (scrolling = false)}
   >
-    <div class="flex h-full w-full flex-col items-start justify-start gap-3 overflow-y-scroll p-4">
+    <div>
+      <div class="sticky top-0 z-10 bg-gray-800 p-4">
+        <div class="flex items-center justify-between pb-3">
+          <h6 class="text-sm font-medium text-black dark:text-white">Filters</h6>
+          <div class="flex items-center space-x-3">
+            <button
+              on:click={clearFilters}
+              class="text-primary-600 dark:text-primary-500 flex items-center text-sm font-medium text-blue-500 hover:underline"
+            >
+              Clear all
+            </button>
+          </div>
+        </div>
+        <SearchInput {handleSearch} />
+      </div>
       {#each sidebarFilters as filter}
-        <div
-          class="flex w-full flex-col items-start justify-start gap-3 border-b border-gray-700 p-4"
-        >
+        <div class="flex w-full flex-col items-start justify-start gap-3 p-4">
           <button
-            class="flex w-full items-center justify-between text-base font-semibold text-white"
+            class="flex w-full items-center justify-between text-start text-base font-semibold text-white"
             on:click={() => toggleFilter(filter.label)}
           >
             <span>{filter.label}</span>
             <span
               class="h-5 w-5 transform transition-transform duration-200"
-              class:rotate-180={collapsedFilters[filter.label]}
+              class:rotate-180={!openedFilters[filter.label]}
             >
               <ChevronDown />
             </span>
           </button>
           <div
-            class:hidden={collapsedFilters[filter.label]}
+            class:hidden={!openedFilters[filter.label]}
             id="filter-values-{filter.label}"
             class="mt-2 flex w-full flex-col items-start justify-start gap-3"
           >

@@ -39,7 +39,7 @@ describe('sortApplicationsAlphabetically', () => {
       description: 'This is Banana',
       vendor: { name: 'Vendor 2', url: 'https://vendor2.com' },
       categories: [Category.Arcade],
-      infrastructure: [Infrastructure.AWSGov],
+      infrastructure: [Infrastructure.AWSGovCloudUS],
       architecture: [Architecture.Arm64]
     }
   } as Application;
@@ -51,7 +51,7 @@ describe('sortApplicationsAlphabetically', () => {
       description: 'This is Cherry',
       vendor: { name: 'Vendor 3', url: 'https://vendor3.com' },
       categories: [Category.Web],
-      infrastructure: [Infrastructure.AirGapped],
+      infrastructure: [Infrastructure.OnPrem],
       architecture: [Architecture.Arm64]
     }
   } as Application;

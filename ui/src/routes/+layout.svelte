@@ -5,16 +5,16 @@
   import { afterNavigate } from '$app/navigation';
   import { Navbar } from '$lib/features/navigation';
   import '../app.postcss';
+  import Footer from '$lib/components/Footer.svelte';
 
   afterNavigate(initFlowbite);
 </script>
 
-<Navbar />
+<div class="flex min-h-screen flex-col transition-all duration-300 ease-in-out dark:text-white">
+  <Navbar />
 
-<main
-  class="relative h-screen w-full overflow-hidden transition-all duration-300 ease-in-out dark:bg-gray-900 dark:text-white"
->
-  <div class="h-full overflow-y-auto" style="padding-top: var(--nav-height);">
+  <main class="mt-[var(--navbar-height)] flex h-full flex-1">
     <slot />
-  </div>
-</main>
+  </main>
+  <Footer />
+</div>

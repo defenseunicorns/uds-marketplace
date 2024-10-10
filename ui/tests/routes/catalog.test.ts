@@ -5,8 +5,9 @@ import { expect, test } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Architecture } from '../../src/lib/types/gen';
+import { Category } from '../../src/lib/types/gen';
 import { sortApplicationsAlphabetically } from '../../src/lib/utils';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const catalogData = sortApplicationsAlphabetically(
   JSON.parse(fs.readFileSync(path.join(__dirname, '../../static/api/apps/index.json'), 'utf-8'))
@@ -91,13 +92,7 @@ test.describe('Catalog View', () => {
 test.describe('Sidebar', () => {
   test('displays all filter categories', async ({ page }) => {
     await page.goto('/apps');
-    const filterCategories = [
-      'Category',
-      'Pricing Model',
-      'Impact Level',
-      'Infrastructure',
-      'Architecture'
-    ];
+    const filterCategories = ['Category', 'Supported Infrastructure', 'Security'];
     for (const category of filterCategories) {
       const categoryButton = await page.waitForSelector(`button:has-text("${category}")`);
       expect(categoryButton).not.toBeNull();
@@ -138,7 +133,7 @@ test.describe('Sidebar', () => {
     const unfilteredResultsLength = unfilteredResults.length;
     console.log(`Unfiltered results: ${unfilteredResultsLength}`);
     // Apply a filter
-    await page.click(`label:has-text("${Architecture.Arm64}")`);
+    await page.click(`label:has-text("${Category.Web}")`);
 
     // Check if the filter is applied (you may need to adjust this based on how filtered results are displayed)
     const filteredResults = await page.$$('.app-card');
@@ -147,7 +142,34 @@ test.describe('Sidebar', () => {
     expect(filteredResultsLength).toBeLessThan(unfilteredResultsLength);
 
     // Remove the filter
-    await page.click(`label:has-text("${Architecture.Arm64}")`);
+    await page.click(`label:has-text("${Category.Web}")`);
+
+    // Check if all results are shown again
+    const allResults = await page.$$('.app-card');
+    const allResultsLength = allResults.length;
+    console.log(`All results: ${allResultsLength}`);
+    expect(allResultsLength).toBe(unfilteredResultsLength);
+  });
+
+  test('removes all filters', async ({ page }) => {
+    await page.goto('/apps');
+    // Wait for the app cards to be visible
+    await page.waitForSelector('.app-card', { state: 'visible' });
+    const unfilteredResults = await page.$$('.app-card');
+    const unfilteredResultsLength = unfilteredResults.length;
+    console.log(`Unfiltered results: ${unfilteredResultsLength}`);
+    // Apply a filter
+    await page.click(`label:has-text("${Category.Arcade}")`);
+    await page.click(`label:has-text("${Category.Web}")`);
+
+    // Check if the filter is applied (you may need to adjust this based on how filtered results are displayed)
+    const filteredResults = await page.$$('.app-card');
+    const filteredResultsLength = filteredResults.length;
+    console.log(`Filtered results: ${filteredResultsLength}`);
+    expect(filteredResultsLength).toBeLessThan(unfilteredResultsLength);
+
+    // Remove the filters
+    await page.getByText('Clear all').click();
 
     // Check if all results are shown again
     const allResults = await page.$$('.app-card');
@@ -206,14 +228,6 @@ test.describe('Search Functionality', () => {
 
     const finalAppCards = await page.$$('.app-card');
     expect(finalAppCards.length).toBe(initialCount);
-  });
-
-  test('navigates to /apps when searching from another page', async ({ page }) => {
-    await page.goto('/apps/archivista');
-    await page.fill('#application-search', 'test');
-    await page.waitForTimeout(600);
-
-    expect(page.url().endsWith('/apps')).toBe(true);
   });
 
   test('keyboard shortcut focuses search input', async ({ page }) => {
