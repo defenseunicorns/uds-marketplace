@@ -12,7 +12,7 @@ variables:
   - name: REF
     description: "version reference"
     # x-release-please-start-version
-    default: 0.2.0
+    default: 0.3.0
     # x-release-please-end
 
 tasks:

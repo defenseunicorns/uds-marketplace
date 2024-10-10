@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/defenseunicorns/uds-appstore/compare/v0.2.0...v0.3.0) (2024-10-10)
+
+
+### Features
+
+* **ui:** sidebar updates ([#296](https://github.com/defenseunicorns/uds-appstore/issues/296)) ([facdd36](https://github.com/defenseunicorns/uds-appstore/commit/facdd364a309b2c170140d48e41f9e530728aa3a))
+
+
+### Miscellaneous
+
+* **ui:** remove light mode ([#297](https://github.com/defenseunicorns/uds-appstore/issues/297)) ([58f3a63](https://github.com/defenseunicorns/uds-appstore/commit/58f3a6335996698e92780ec7b42a2e05edbc40c8))
+
 ## [0.2.0](https://github.com/defenseunicorns/uds-appstore/compare/v0.1.2...v0.2.0) (2024-10-08)
 
 
